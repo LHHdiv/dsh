@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>第16章 如何给 dsh 加能力 · dsh 学习书</title>
+<style>
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#1b2430; --muted:#5d6675; --faint:#8b94a3;
+  --border:#e6e9ef; --accent:#2563eb; --accent-soft:#eaf1ff; --accent-ink:#1d4ed8;
+  --green:#0f9d6b; --green-soft:#e7f6ef; --amber:#b9790a; --amber-soft:#fbf2dd;
+  --code-bg:#0f172a; --code-fg:#e2e8f0;
+  --radius:12px; --shadow:0 1px 2px rgba(16,32,46,.05),0 6px 24px rgba(16,32,46,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.85;font-size:16px}
+a{color:var(--accent-ink);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);color:var(--accent-ink);padding:.1em .36em;border-radius:5px}
+pre{margin:0}
+.progress{position:fixed;top:0;left:0;height:3px;background:var(--accent);width:0;z-index:60}
+header.top{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.88);
+  backdrop-filter:saturate(160%) blur(10px);border-bottom:1px solid var(--border)}
+.top-inner{max-width:1200px;margin:0 auto;padding:12px 22px;font-weight:700;letter-spacing:.2px;
+  display:flex;align-items:center;gap:10px}
+.top-inner .dot{width:11px;height:11px;border-radius:3px;background:var(--accent)}
+.top-inner small{font-weight:400;color:var(--faint);font-size:13px;margin-left:auto}
+.top-inner a.home{color:var(--accent-ink);font-weight:600;font-size:13px}
+
+.layout{display:grid;grid-template-columns:288px minmax(0,1fr);gap:40px;
+  max-width:1200px;margin:0 auto;padding:26px 22px 90px}
+.sidebar{position:sticky;top:66px;align-self:start;height:calc(100vh - 88px);overflow:auto;
+  background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 14px;box-shadow:var(--shadow);font-size:13px}
+.side-cat{font-size:11.5px;font-weight:800;letter-spacing:.4px;color:var(--ink);
+  margin:10px 8px 6px;padding-bottom:5px;border-bottom:2px solid var(--accent-soft)}
+.sidebar ul{list-style:none;margin:0;padding:0}
+.sidebar li{margin:0}
+.sidebar a{display:block;padding:5px 10px;border-radius:8px;color:var(--muted);
+  border-left:3px solid transparent;line-height:1.45}
+.sidebar a:hover{background:var(--bg);color:var(--ink);text-decoration:none}
+.sidebar a.active{color:var(--accent-ink);border-left-color:var(--accent);
+  background:var(--accent-soft);font-weight:700}
+.sidebar .toc{font-size:12.5px;margin:2px 0 10px;padding-left:4px}
+.sidebar .toc ul{list-style:none;margin:0;padding:0}
+.sidebar .toc li{margin:0}
+.sidebar .toc a{display:block;padding:2px 9px;border-radius:6px;color:var(--muted);
+  border-left:2px solid transparent}
+.sidebar .toc a:hover{background:var(--bg)}
+.sidebar .toc a.active{color:var(--accent-ink);border-left-color:var(--accent);
+  background:var(--accent-soft);font-weight:600}
+
+main{min-width:0}
+.breadcrumb{font-size:13px;color:var(--faint);margin:2px 0 16px}
+.breadcrumb b{color:var(--muted)}
+.cover{background:linear-gradient(180deg,#fff,#eef3fb);border:1px solid var(--border);
+  border-radius:16px;padding:34px 36px;margin-bottom:26px;box-shadow:var(--shadow)}
+.cover .kicker{font-size:12px;letter-spacing:1.5px;color:var(--accent);font-weight:700}
+.cover h1{font-size:28px;line-height:1.3;margin:8px 0 10px;letter-spacing:-.3px}
+.cover .lede{color:var(--muted);margin:0 0 16px;font-size:15px;max-width:680px}
+.goal{display:flex;gap:10px;align-items:flex-start;background:var(--accent-soft);
+  border:1px solid #cfe0ff;border-radius:10px;padding:12px 14px;font-size:14.5px;color:var(--accent-ink)}
+.goal .gicon{font-size:16px;line-height:1.4}
+.goal b{margin-right:4px}
+.article{background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);
+  padding:28px 36px;margin:0 0 26px;box-shadow:var(--shadow);scroll-margin-top:70px}
+.article h2{font-size:22px;letter-spacing:-.2px;margin:26px 0 10px;padding-top:6px;
+  border-left:4px solid var(--accent);padding-left:12px}
+.article h3{font-size:17px;margin:22px 0 8px;color:var(--ink)}
+.article h4{font-size:15px;margin:16px 0 6px;color:var(--ink)}
+.article p{margin:12px 0}
+.article ul,.article ol{margin:12px 0;padding-left:24px}
+.article li{margin:5px 0}
+.article pre{background:var(--code-bg);border-radius:10px;padding:16px 18px;overflow:auto;margin:14px 0}
+.article pre code{background:transparent;color:var(--code-fg);padding:0;font-size:13px;line-height:1.6;white-space:pre}
+.article blockquote{margin:14px 0;padding:12px 16px;border-left:3px solid var(--accent);
+  background:var(--accent-soft);border-radius:0 8px 8px 0;color:var(--muted)}
+.article blockquote p{margin:4px 0}
+.article table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px;
+  box-shadow:var(--shadow);border-radius:8px;overflow:hidden}
+.article th,.article td{border:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top}
+.article th{background:var(--bg);font-weight:700;color:var(--ink)}
+.article tr:nth-child(even) td{background:#fafbfd}
+.callout{margin:16px 0;padding:13px 16px;border-radius:10px;font-size:14.5px;border:1px solid transparent}
+.callout.key{background:var(--accent-soft);border-color:#cfe0ff;color:var(--accent-ink)}
+.callout.tip{background:var(--green-soft);border-color:#bfe9d6;color:#0b6b49}
+.callout.warn{background:var(--amber-soft);border-color:#f0dcae;color:#7a4f06}
+.pager{display:flex;gap:14px;margin-top:6px}
+.pager a{flex:1;background:var(--paper);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;box-shadow:var(--shadow);color:var(--ink)}
+.pager a:hover{border-color:var(--accent);text-decoration:none}
+.pager .dir{font-size:12px;color:var(--faint)}
+.pager .ptitle{font-weight:700;margin-top:3px;display:block;color:var(--accent-ink)}
+.pager .next{text-align:right}
+footer{color:var(--faint);font-size:13px;text-align:center;padding:30px 16px 50px}
+footer code{background:var(--bg)}
+
+/* 首页 */
+.home{max-width:1080px;margin:0 auto;padding:36px 22px 80px}
+.hero{background:linear-gradient(180deg,#fff,#eef3fb);border:1px solid var(--border);
+  border-radius:16px;padding:40px 38px;margin-bottom:30px;box-shadow:var(--shadow)}
+.hero h1{font-size:30px;margin:0 0 10px;letter-spacing:-.3px}
+.hero p{color:var(--muted);margin:0;font-size:15px;max-width:800px}
+.road{list-style:none;margin:0;padding:0;position:relative}
+.road::before{content:"";position:absolute;left:19px;top:8px;bottom:8px;width:2px;background:var(--border)}
+.rstep{position:relative;display:flex;gap:18px;padding:12px 0}
+.rstep .dot{flex:0 0 40px;height:40px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;color:#fff;font-weight:800;font-size:13px;z-index:1;background:var(--accent);
+  box-shadow:0 0 0 4px var(--bg)}
+.rstep .body{flex:1;background:var(--paper);border:1px solid var(--border);border-radius:12px;
+  padding:14px 18px;box-shadow:var(--shadow)}
+.rstep .body a.title{font-size:16px;font-weight:700;color:var(--ink)}
+.rstep .body a.title:hover{text-decoration:none;color:var(--accent-ink)}
+.rstep .meta{font-size:12px;color:var(--faint);margin:4px 0 2px}
+.rstep .goal{color:var(--muted);font-size:14px;margin:4px 0 0}
+.sec-title{font-size:20px;margin:34px 0 4px}
+.sec-sub{color:var(--muted);margin:0 0 18px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;box-shadow:var(--shadow);transition:transform .12s ease,border-color .12s ease}
+.card:hover{transform:translateY(-2px);border-color:var(--accent);text-decoration:none}
+.card .part{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.5px}
+.card h3{margin:6px 0 8px;font-size:16px;color:var(--ink)}
+.card p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<header class="top"><div class="top-inner"><span class="dot"></span>dsh 学习书
+  <a class="home" href="index.html">← 目录</a>
+  <small>Part 3 · 动手进化</small></div></header>
+<div class="layout">
+<aside class="sidebar">
+  <div class="side-cat">本页大纲</div>
+  <div class="toc"><div class="toc">
+<ul>
+<li><a href="#16-dsh">第16章 如何给 dsh 加能力</a><ul>
+<li><a href="#161">16.1 官方扩展点映射表</a></li>
+<li><a href="#162">16.2 三个最常见的"加能力"实例</a><ul>
+<li><a href="#agent">实例一：给 Agent 加"长期记忆"（推荐你的下一步）</a></li>
+<li><a href="#agent-agent">实例二：给 Agent 加"子 Agent"（委派）</a></li>
+<li><a href="#provider">实例三：加一个"模型 provider"</a></li>
+</ul>
+</li>
+<li><a href="#163">16.3 判断"改哪一层"的心法</a></li>
+<li><a href="#164-cookbook">16.4 官方 cookbook（进阶自助入口）</a></li>
+<li><a href="#165">16.5 小结</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+  <nav class="side"><div class="side-cat">Part 0 · 学前通识（0 基础）</div><ul><li><a href="00-导读.html">导读：本书怎么读、你将学会什么</a></li><li><a href="01-大模型.html">第1章 什么是大模型（LLM）</a></li><li><a href="02-提示词.html">第2章 什么是提示词（Prompt）</a></li><li><a href="03-智能体.html">第3章 什么是指令循环与 Agent</a></li><li><a href="04-框架.html">第4章 什么是 Harness（智能体框架）</a></li><li><a href="05-为何dsh.html">第5章 为什么选 dsh 做终身个人 Agent</a></li></ul><div class="side-cat">Part 1 · 项目全景</div><ul><li><a href="06-项目是什么.html">第6章 dsh 是什么 & 中心思想</a></li><li><a href="07-本地运行.html">第7章 本地把项目跑起来</a></li><li><a href="08-目录结构.html">第8章 目录结构与文件含义</a></li></ul><div class="side-cat">Part 2 · 核心源码精讲</div><ul><li><a href="09-cordis内核.html">第9章 Cordis 插件内核</a></li><li><a href="10-会话与提示.html">第10章 会话日志与系统提示</a></li><li><a href="11-工具系统.html">第11章 工具系统（tools / defineTool）</a></li><li><a href="12-大模型层.html">第12章 LLM 能力层（llm provider）</a></li><li><a href="13-主循环.html">第13章 Agent 主循环（turn 流）</a></li><li><a href="14-预设系统.html">第14章 预设系统（preset）与默认覆盖</a></li><li><a href="15-实战工具.html">第15章 实战：写第一个私有工具 my_notes</a></li></ul><div class="side-cat">Part 3 · 动手进化</div><ul><li><a class="active" href="16-如何加能力.html">第16章 如何给 dsh 加能力</a></li><li><a href="17-演进路线.html">第17章 长期演进路线图</a></li><li><a href="18-小结.html">第18章 学习小结与下一步</a></li></ul></nav>
+</aside>
+<main>
+<div class="breadcrumb">Part 3 · 动手进化 <b>›</b> 第16章 如何给 dsh 加能力</div>
+<div class="cover"><div class="kicker">Part 3 · 动手进化</div><h1>第16章 如何给 dsh 加能力</h1>
+  <p class="lede">来自 `docs/architecture.md` 的"Where new behavior goes"，这是你以后做任何改动的**第一查表**：</p>
+  <div class="goal"><span class="gicon">🎯</span><div><b>本文学系目标</b>掌握加能力的方法：工具、记忆（新 SessionEvent）、子 Agent，以及扩展点映射表。</div></div>
+</div>
+<article class="article">
+<h1 id="16-dsh">第16章 如何给 dsh 加能力</h1>
+<blockquote>
+<p>你已经会加工具了。这一章把"加能力"这件事<strong>系统化</strong>：dsh 给每个目标都预留了标准扩展点。记住一句话：<strong>先找扩展点，再挂插件；绝不改核心。</strong></p>
+</blockquote>
+<h2 id="161">16.1 官方扩展点映射表</h2>
+<p>来自 <code>docs/architecture.md</code> 的"Where new behavior goes"，这是你以后做任何改动的<strong>第一查表</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>你的目标</th>
+<th>机制（扩展点）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>加一个模型 provider</td>
+<td>在 <code>ctx.llm</code> 上注册适配器</td>
+</tr>
+<tr>
+<td>加一个模型可见能力</td>
+<td>注册到 <code>ctx.tools</code>；其 schema 自动进入提示组装</td>
+</tr>
+<tr>
+<td>给某个会话不同的能力集</td>
+<td>组合一个 agent preset（service 行需 <code>isolate</code> realm）</td>
+</tr>
+<tr>
+<td>加 Shell 执行</td>
+<td>注册 <code>ctx.shell</code> 后端（本地实现经由 <code>ctx.subprocess</code>）</td>
+</tr>
+<tr>
+<td>加持久终端执行</td>
+<td>注册 <code>ctx.terminals</code> 后端 + <code>dsh-tool-terminal</code></td>
+</tr>
+<tr>
+<td>加人工命令</td>
+<td>注册到 <code>ctx.commands</code>（不走模型回合）</td>
+</tr>
+<tr>
+<td>加后台任务</td>
+<td>注册到 <code>ctx.jobs</code>（<code>job_*</code> 工具收集/停止）</td>
+</tr>
+<tr>
+<td>加文件系统访问或策略</td>
+<td>注册 <code>ctx.fs</code> provider，或监听 <code>fs/*</code> 事件</td>
+</tr>
+<tr>
+<td>限制子进程</td>
+<td>用 <code>ctx.sandbox</code> 后端</td>
+</tr>
+<tr>
+<td>拦截请求/工具/回合</td>
+<td>监听 <code>agent/*</code> 或 <code>tools/*</code> 事件（<code>agent/turn-stopping</code> 可停回合）</td>
+</tr>
+<tr>
+<td>给模型注入上下文</td>
+<td>调 <code>agent.inject()</code>，落入下一个被接受的请求</td>
+</tr>
+<tr>
+<td>加 UI / 编辑器集成</td>
+<td>驱动 <code>ctx.agents</code>，从 <code>session/event</code> 渲染</td>
+</tr>
+<tr>
+<td>加持久会话状态</td>
+<td>扩展 <code>SessionEventMap</code>，从日志渲染与回放</td>
+</tr>
+<tr>
+<td>生成会话标题</td>
+<td>注册唯一的 <code>ctx.sessionTitle</code> provider</td>
+</tr>
+<tr>
+<td>分叉实时会话</td>
+<td><code>ctx.sessions.fork(source, boundary?, childSessionId?)</code></td>
+</tr>
+<tr>
+<td>让注册只作用于某 agent</td>
+<td>用该 agent 的 <code>agent.ctx</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="162">16.2 三个最常见的"加能力"实例</h2>
+<h3 id="agent">实例一：给 Agent 加"长期记忆"（推荐你的下一步）</h3>
+<p>模型是无状态的（第 1 章）。要让它"记得你"，<strong>正确做法是扩展会话事件</strong>，而不是塞 prompt：</p>
+<ol>
+<li>在 <code>SessionEventMap</code> 里新增一种事件（如 <code>memory/upsert</code>）；</li>
+<li>写一个插件：在 <code>agent/pre-step</code> 时，从你的记忆存储检索相关内容，<strong>注入</strong>进本轮输入；</li>
+<li>按"模型可见即已记录"铁律：注入的内容也要能在日志中重建（渲染自事件）。</li>
+</ol>
+<blockquote>
+<p>为什么不能只塞 prompt？因为那会违反 <code>deriveMessages</code> 的不变式，且不可回放、不可持久。dsh 的架构在"逼"你用正确的方式加记忆。</p>
+</blockquote>
+<h3 id="agent-agent">实例二：给 Agent 加"子 Agent"（委派）</h3>
+<p><code>packages/subagent</code> 提供子代理能力：</p>
+<ul>
+<li><code>ctx.subagent</code> 服务定义子代理接口；</li>
+<li><code>tool-subagent</code> 是一个模型可见工具——模型可以把一个子任务<strong>委派</strong>给一个全新上下文的子 Agent，再把结果拿回来。</li>
+</ul>
+<p>适合：把一个"多步骤、易污染主上下文"的任务拆出去，让主 Agent 保持专注。</p>
+<h3 id="provider">实例三：加一个"模型 provider"</h3>
+<ol>
+<li>写一个类继承 <code>LlmAdapter</code>，实现 <code>stream()</code>；</li>
+<li>在插件 <code>apply</code> 里 <code>ctx.llm.registerAdapter(['my-provider'], adapter)</code>；</li>
+<li>加配置项（<code>registerConfigurableProviders</code>），密钥走 <code>credentials</code> 服务。</li>
+</ol>
+<p>上层（主循环、工具、UI）完全不用动——这就是 seam 的威力（第 12 章）。</p>
+<h2 id="163">16.3 判断"改哪一层"的心法</h2>
+<p>拿到一个新需求，按这个顺序问自己：</p>
+<ol>
+<li><strong>它是不是一个新的"能力"？</strong> → 写插件，注册到对应 <code>ctx.&lt;key&gt;</code>。</li>
+<li><strong>它是不是"横切"（日志、鉴权、缓存）？</strong> → 监听对应事件（<code>agent/*</code>、<code>tools/*</code>、<code>llm/stream</code>）。</li>
+<li><strong>它是不是"这个会话专属"？</strong> → 放进预设组合（preset），别全局注册。</li>
+<li><strong>它要不要"模型看到"？</strong> → 要：做成工具或事件注入；不要：做成普通服务/命令。</li>
+<li><strong>如果非改核心不可？</strong> → 停下来。多半是你没找到正确扩展点。回查上表。</li>
+</ol>
+<h2 id="164-cookbook">16.4 官方 cookbook（进阶自助入口）</h2>
+<p><code>docs/cookbook/</code> 里有逐步指南，你之后可以自助查阅：</p>
+<ul>
+<li><code>adding-a-tool.md</code>（加工具）、<code>adding-an-llm-adapter.md</code>（加模型适配器）、<code>adding-a-package.md</code>（加包）、<code>adding-a-conversation-node.md</code>（加 UI 节点）、<code>adding-a-settings-card.md</code>（加设置卡片）。</li>
+</ul>
+<h2 id="165">16.5 小结</h2>
+<ul>
+<li>所有扩展都有<strong>标准扩展点</strong>：注册服务 / 监听事件 / 组合预设 / 扩展会话事件。</li>
+<li>加记忆 = 新 <code>SessionEvent</code> + 从日志渲染（遵守铁律）。</li>
+<li>改不动就查 <code>architecture.md</code> 的扩展点表，或读 cookbook。</li>
+</ul>
+<blockquote>
+<p>下一章：把你的目标（终身个人 Agent）拆成阶段，规划长期演进路线。</p>
+</blockquote>
+</article>
+<nav class="pager"><a class="prev" href="15-实战工具.html"><span class="dir">← 上一篇</span><span class="ptitle">第15章 实战：写第一个私有工具 my_notes</span></a><a class="next" href="17-演进路线.html"><span class="dir">下一篇 →</span><span class="ptitle">第17章 长期演进路线图</span></a></nav>
+</main>
+</div>
+<footer>dsh 学习书 · 配套 Markdown 见 <code>chapters/</code> · 双击 HTML 即可离线阅读</footer>
+<script>
+const prog=document.getElementById('progress');
+const onScroll=()=>{const h=document.documentElement;
+  prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';};
+window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+const tocLinks=[...document.querySelectorAll('aside.sidebar .toc a')];
+const heads=[...document.querySelectorAll('main .article h2[id],main .article h3[id]')];
+if(heads.length && tocLinks.length){
+  const obs=new IntersectionObserver((es)=>{es.forEach(e=>{
+    if(e.isIntersecting){const id=e.target.id;
+      tocLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id));}
+  });},{rootMargin:'-45% 0px -50% 0px'});
+  heads.forEach(h=>obs.observe(h));
+}
+</script>
+</body></html>

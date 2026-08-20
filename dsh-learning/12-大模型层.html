@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>第12章 LLM 能力层（llm provider） · dsh 学习书</title>
+<style>
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#1b2430; --muted:#5d6675; --faint:#8b94a3;
+  --border:#e6e9ef; --accent:#2563eb; --accent-soft:#eaf1ff; --accent-ink:#1d4ed8;
+  --green:#0f9d6b; --green-soft:#e7f6ef; --amber:#b9790a; --amber-soft:#fbf2dd;
+  --code-bg:#0f172a; --code-fg:#e2e8f0;
+  --radius:12px; --shadow:0 1px 2px rgba(16,32,46,.05),0 6px 24px rgba(16,32,46,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.85;font-size:16px}
+a{color:var(--accent-ink);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);color:var(--accent-ink);padding:.1em .36em;border-radius:5px}
+pre{margin:0}
+.progress{position:fixed;top:0;left:0;height:3px;background:var(--accent);width:0;z-index:60}
+header.top{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.88);
+  backdrop-filter:saturate(160%) blur(10px);border-bottom:1px solid var(--border)}
+.top-inner{max-width:1200px;margin:0 auto;padding:12px 22px;font-weight:700;letter-spacing:.2px;
+  display:flex;align-items:center;gap:10px}
+.top-inner .dot{width:11px;height:11px;border-radius:3px;background:var(--accent)}
+.top-inner small{font-weight:400;color:var(--faint);font-size:13px;margin-left:auto}
+.top-inner a.home{color:var(--accent-ink);font-weight:600;font-size:13px}
+
+.layout{display:grid;grid-template-columns:288px minmax(0,1fr);gap:40px;
+  max-width:1200px;margin:0 auto;padding:26px 22px 90px}
+.sidebar{position:sticky;top:66px;align-self:start;height:calc(100vh - 88px);overflow:auto;
+  background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 14px;box-shadow:var(--shadow);font-size:13px}
+.side-cat{font-size:11.5px;font-weight:800;letter-spacing:.4px;color:var(--ink);
+  margin:10px 8px 6px;padding-bottom:5px;border-bottom:2px solid var(--accent-soft)}
+.sidebar ul{list-style:none;margin:0;padding:0}
+.sidebar li{margin:0}
+.sidebar a{display:block;padding:5px 10px;border-radius:8px;color:var(--muted);
+  border-left:3px solid transparent;line-height:1.45}
+.sidebar a:hover{background:var(--bg);color:var(--ink);text-decoration:none}
+.sidebar a.active{color:var(--accent-ink);border-left-color:var(--accent);
+  background:var(--accent-soft);font-weight:700}
+.sidebar .toc{font-size:12.5px;margin:2px 0 10px;padding-left:4px}
+.sidebar .toc ul{list-style:none;margin:0;padding:0}
+.sidebar .toc li{margin:0}
+.sidebar .toc a{display:block;padding:2px 9px;border-radius:6px;color:var(--muted);
+  border-left:2px solid transparent}
+.sidebar .toc a:hover{background:var(--bg)}
+.sidebar .toc a.active{color:var(--accent-ink);border-left-color:var(--accent);
+  background:var(--accent-soft);font-weight:600}
+
+main{min-width:0}
+.breadcrumb{font-size:13px;color:var(--faint);margin:2px 0 16px}
+.breadcrumb b{color:var(--muted)}
+.cover{background:linear-gradient(180deg,#fff,#eef3fb);border:1px solid var(--border);
+  border-radius:16px;padding:34px 36px;margin-bottom:26px;box-shadow:var(--shadow)}
+.cover .kicker{font-size:12px;letter-spacing:1.5px;color:var(--accent);font-weight:700}
+.cover h1{font-size:28px;line-height:1.3;margin:8px 0 10px;letter-spacing:-.3px}
+.cover .lede{color:var(--muted);margin:0 0 16px;font-size:15px;max-width:680px}
+.goal{display:flex;gap:10px;align-items:flex-start;background:var(--accent-soft);
+  border:1px solid #cfe0ff;border-radius:10px;padding:12px 14px;font-size:14.5px;color:var(--accent-ink)}
+.goal .gicon{font-size:16px;line-height:1.4}
+.goal b{margin-right:4px}
+.article{background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);
+  padding:28px 36px;margin:0 0 26px;box-shadow:var(--shadow);scroll-margin-top:70px}
+.article h2{font-size:22px;letter-spacing:-.2px;margin:26px 0 10px;padding-top:6px;
+  border-left:4px solid var(--accent);padding-left:12px}
+.article h3{font-size:17px;margin:22px 0 8px;color:var(--ink)}
+.article h4{font-size:15px;margin:16px 0 6px;color:var(--ink)}
+.article p{margin:12px 0}
+.article ul,.article ol{margin:12px 0;padding-left:24px}
+.article li{margin:5px 0}
+.article pre{background:var(--code-bg);border-radius:10px;padding:16px 18px;overflow:auto;margin:14px 0}
+.article pre code{background:transparent;color:var(--code-fg);padding:0;font-size:13px;line-height:1.6;white-space:pre}
+.article blockquote{margin:14px 0;padding:12px 16px;border-left:3px solid var(--accent);
+  background:var(--accent-soft);border-radius:0 8px 8px 0;color:var(--muted)}
+.article blockquote p{margin:4px 0}
+.article table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px;
+  box-shadow:var(--shadow);border-radius:8px;overflow:hidden}
+.article th,.article td{border:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top}
+.article th{background:var(--bg);font-weight:700;color:var(--ink)}
+.article tr:nth-child(even) td{background:#fafbfd}
+.callout{margin:16px 0;padding:13px 16px;border-radius:10px;font-size:14.5px;border:1px solid transparent}
+.callout.key{background:var(--accent-soft);border-color:#cfe0ff;color:var(--accent-ink)}
+.callout.tip{background:var(--green-soft);border-color:#bfe9d6;color:#0b6b49}
+.callout.warn{background:var(--amber-soft);border-color:#f0dcae;color:#7a4f06}
+.pager{display:flex;gap:14px;margin-top:6px}
+.pager a{flex:1;background:var(--paper);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;box-shadow:var(--shadow);color:var(--ink)}
+.pager a:hover{border-color:var(--accent);text-decoration:none}
+.pager .dir{font-size:12px;color:var(--faint)}
+.pager .ptitle{font-weight:700;margin-top:3px;display:block;color:var(--accent-ink)}
+.pager .next{text-align:right}
+footer{color:var(--faint);font-size:13px;text-align:center;padding:30px 16px 50px}
+footer code{background:var(--bg)}
+
+/* 首页 */
+.home{max-width:1080px;margin:0 auto;padding:36px 22px 80px}
+.hero{background:linear-gradient(180deg,#fff,#eef3fb);border:1px solid var(--border);
+  border-radius:16px;padding:40px 38px;margin-bottom:30px;box-shadow:var(--shadow)}
+.hero h1{font-size:30px;margin:0 0 10px;letter-spacing:-.3px}
+.hero p{color:var(--muted);margin:0;font-size:15px;max-width:800px}
+.road{list-style:none;margin:0;padding:0;position:relative}
+.road::before{content:"";position:absolute;left:19px;top:8px;bottom:8px;width:2px;background:var(--border)}
+.rstep{position:relative;display:flex;gap:18px;padding:12px 0}
+.rstep .dot{flex:0 0 40px;height:40px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;color:#fff;font-weight:800;font-size:13px;z-index:1;background:var(--accent);
+  box-shadow:0 0 0 4px var(--bg)}
+.rstep .body{flex:1;background:var(--paper);border:1px solid var(--border);border-radius:12px;
+  padding:14px 18px;box-shadow:var(--shadow)}
+.rstep .body a.title{font-size:16px;font-weight:700;color:var(--ink)}
+.rstep .body a.title:hover{text-decoration:none;color:var(--accent-ink)}
+.rstep .meta{font-size:12px;color:var(--faint);margin:4px 0 2px}
+.rstep .goal{color:var(--muted);font-size:14px;margin:4px 0 0}
+.sec-title{font-size:20px;margin:34px 0 4px}
+.sec-sub{color:var(--muted);margin:0 0 18px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;box-shadow:var(--shadow);transition:transform .12s ease,border-color .12s ease}
+.card:hover{transform:translateY(-2px);border-color:var(--accent);text-decoration:none}
+.card .part{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.5px}
+.card h3{margin:6px 0 8px;font-size:16px;color:var(--ink)}
+.card p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<header class="top"><div class="top-inner"><span class="dot"></span>dsh 学习书
+  <a class="home" href="index.html">← 目录</a>
+  <small>Part 2 · 核心源码精讲</small></div></header>
+<div class="layout">
+<aside class="sidebar">
+  <div class="side-cat">本页大纲</div>
+  <div class="toc"><div class="toc">
+<ul>
+<li><a href="#12-llm-llm-provider">第12章 LLM 能力层（llm provider）</a><ul>
+<li><a href="#121-seam">12.1 什么是 seam（接缝）</a></li>
+<li><a href="#122-service-definitionctxllm">12.2 Service Definition：ctx.llm</a></li>
+<li><a href="#123-service-providerdeepseek">12.3 Service Provider：DeepSeek 适配器</a></li>
+<li><a href="#124">12.4 凭据从哪来</a></li>
+<li><a href="#125-consumer">12.5 Consumer：谁在调用模型</a></li>
+<li><a href="#126">12.6 为什么这套设计对你重要</a></li>
+<li><a href="#127">12.7 小结</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+  <nav class="side"><div class="side-cat">Part 0 · 学前通识（0 基础）</div><ul><li><a href="00-导读.html">导读：本书怎么读、你将学会什么</a></li><li><a href="01-大模型.html">第1章 什么是大模型（LLM）</a></li><li><a href="02-提示词.html">第2章 什么是提示词（Prompt）</a></li><li><a href="03-智能体.html">第3章 什么是指令循环与 Agent</a></li><li><a href="04-框架.html">第4章 什么是 Harness（智能体框架）</a></li><li><a href="05-为何dsh.html">第5章 为什么选 dsh 做终身个人 Agent</a></li></ul><div class="side-cat">Part 1 · 项目全景</div><ul><li><a href="06-项目是什么.html">第6章 dsh 是什么 & 中心思想</a></li><li><a href="07-本地运行.html">第7章 本地把项目跑起来</a></li><li><a href="08-目录结构.html">第8章 目录结构与文件含义</a></li></ul><div class="side-cat">Part 2 · 核心源码精讲</div><ul><li><a href="09-cordis内核.html">第9章 Cordis 插件内核</a></li><li><a href="10-会话与提示.html">第10章 会话日志与系统提示</a></li><li><a href="11-工具系统.html">第11章 工具系统（tools / defineTool）</a></li><li><a class="active" href="12-大模型层.html">第12章 LLM 能力层（llm provider）</a></li><li><a href="13-主循环.html">第13章 Agent 主循环（turn 流）</a></li><li><a href="14-预设系统.html">第14章 预设系统（preset）与默认覆盖</a></li><li><a href="15-实战工具.html">第15章 实战：写第一个私有工具 my_notes</a></li></ul><div class="side-cat">Part 3 · 动手进化</div><ul><li><a href="16-如何加能力.html">第16章 如何给 dsh 加能力</a></li><li><a href="17-演进路线.html">第17章 长期演进路线图</a></li><li><a href="18-小结.html">第18章 学习小结与下一步</a></li></ul></nav>
+</aside>
+<main>
+<div class="breadcrumb">Part 2 · 核心源码精讲 <b>›</b> 第12章 LLM 能力层（llm provider）</div>
+<div class="cover"><div class="kicker">Part 2 · 核心源码精讲</div><h1>第12章 LLM 能力层（llm provider）</h1>
+  <p class="lede">架构文档给了一个重要概念（第 98–100 行）：</p>
+  <div class="goal"><span class="gicon">🎯</span><div><b>本文学系目标</b>理解 LLM 能力层：Service Definition/Provider/Consumer 三角色与 DeepSeek 适配器。</div></div>
+</div>
+<article class="article">
+<h1 id="12-llm-llm-provider">第12章 LLM 能力层（llm provider）</h1>
+<blockquote>
+<p>前面把"工具"讲透了。现在看另一端：<strong>模型本身</strong>是怎么被接进 dsh 的？答案是 <code>llm</code> 包的 <strong>seam（能力接缝）</strong> 设计。</p>
+</blockquote>
+<h2 id="121-seam">12.1 什么是 seam（接缝）</h2>
+<p>架构文档给了一个重要概念（第 98–100 行）：</p>
+<blockquote>
+<p>A <strong>seam</strong> is a swappable capability with three roles: a <strong>Service Definition</strong> declaring the interface, a <strong>Service Provider</strong> implementing it, and a <strong>Consumer</strong> using it.</p>
+</blockquote>
+<p>一个<strong>可替换能力</strong>，由三角色组成：</p>
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>含义</th>
+<th>在 LLM 里</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Service Definition</strong></td>
+<td>声明接口</td>
+<td><code>LlmRuntime</code>（<code>ctx.llm</code>）</td>
+</tr>
+<tr>
+<td><strong>Service Provider</strong></td>
+<td>实现接口</td>
+<td>DeepSeek 适配器</td>
+</tr>
+<tr>
+<td><strong>Consumer</strong></td>
+<td>使用它</td>
+<td><code>agent-loop</code>（调用模型）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>关键点：一个 provider 的替换，能改变整个产品的行为。</strong> 比如把 DeepSeek 换成另一个模型，只要换 Provider，上层完全不用动。</p>
+<h2 id="122-service-definitionctxllm">12.2 Service Definition：ctx.llm</h2>
+<p><code>packages/llm/llm</code> 拥有 <code>ctx.llm</code>，类型叫 <code>LlmRuntime</code>。它提供：</p>
+<ul>
+<li><code>registerAdapter(providers, adapter)</code>：注册一个模型适配器；</li>
+<li><code>registerConfigurableProviders([...])</code>：声明可配置的 provider 路由；</li>
+<li><code>prepareCall(...)</code> / <code>stream(...)</code>：发起一次流式调用；</li>
+<li>事件 <code>llm/stream</code>（waterfall）：可被监听做缓存/日志/路由。</li>
+</ul>
+<p>它的 README 明确说：<code>ctx.llm</code> 是"<strong>适配器注册表 + 单一流式调用 API，可被瀑布事件拦截</strong>"。</p>
+<h2 id="123-service-providerdeepseek">12.3 Service Provider：DeepSeek 适配器</h2>
+<p>适配器基类 <code>LlmAdapter</code> 在 <code>packages/llm/llm/README.md</code> 定义，<strong>唯一必须实现的方法是 <code>stream()</code></strong>。</p>
+<p>具体实现 <code>DeepSeekAdapter</code>：</p>
+<ul>
+<li>类定义：<code>packages/llm/llm-deepseek/src/adapter.ts</code>（第 160 行）</li>
+<li>注册消费（插件 <code>apply</code>）：<code>packages/llm/llm-deepseek/src/index.ts</code>（第 256 行）</li>
+</ul>
+<pre><code class="language-ts">// packages/llm/llm-deepseek/src/index.ts（示意）
+const registration = ctx.llm.registerAdapter([PROVIDER], adapter)   // PROVIDER='deepseek-official'
+ctx.llm.registerConfigurableProviders([
+  { provider: PROVIDER, displayName: 'DeepSeek', settingsNs: NS, settingsPath: [] },
+])
+</code></pre>
+<p>可以看到：Provider 插件<strong>只是往 <code>ctx.llm</code> 注册了一个适配器</strong>，核心循环并不知道"背后是哪个模型"。</p>
+<h2 id="124">12.4 凭据从哪来</h2>
+<p>LLM Provider 需要 API Key。dsh 的凭据解析走 <code>credentials</code> 服务，回退到进程环境变量 <code>DEEPSEEK_API_KEY</code>（<code>index.ts</code> 第 225–246 行）。缺失时抛 <code>MISSING_CREDENTIAL</code>。</p>
+<blockquote>
+<p>小白意义：你永远不该把密钥写进代码。dsh 通过 <code>credentials</code> 服务 + 环境变量解耦，安全且可配置。</p>
+</blockquote>
+<h2 id="125-consumer">12.5 Consumer：谁在调用模型</h2>
+<p>LLM 的消费者，就是 <strong>Agent 主循环</strong>（<code>agent-loop</code>）——它在 <code>buildRequest</code>/<code>step</code> 里调用 <code>ctx.llm.prepareCall(...)</code> 与 <code>stream(...)</code>（见第 13 章）。此外，<code>llm/stream</code> 的瀑布监听者（如 <code>dsh-llm-retry</code> 做重试）也是消费者。</p>
+<p>这就形成一个清晰闭环：</p>
+<pre><code>agent-loop (Consumer) ──prepareCall/stream──► ctx.llm (Definition)
+                                              │
+                              registerAdapter ► DeepSeekAdapter (Provider)
+</code></pre>
+<h2 id="126">12.6 为什么这套设计对你重要</h2>
+<p>回到你的目标：想让 dsh 成为"你的"Agent。seam 设计意味着——</p>
+<ul>
+<li>想换/加模型？<strong>写一个新的 Provider 插件</strong>注册到 <code>ctx.llm</code>，不动核心；</li>
+<li>想给所有模型调用加日志/缓存/限流？<strong>监听 <code>llm/stream</code> 事件</strong>；</li>
+<li>想让不同会话用不同模型？在预设里配置 <code>llm-deepseek:</code> 段即可。</li>
+</ul>
+<p>一切又回到了"挂插件"，而不是改核心。</p>
+<h2 id="127">12.7 小结</h2>
+<ul>
+<li>LLM 层是个 seam：Definition=<code>ctx.llm</code>、Provider=DeepSeek 适配器、Consumer=<code>agent-loop</code>。</li>
+<li>Provider 只需实现 <code>stream()</code>，经 <code>registerAdapter</code> 注册；换模型 = 换 Provider。</li>
+<li>凭据走 <code>credentials</code> 服务，回退 <code>DEEPSEEK_API_KEY</code>。</li>
+</ul>
+<blockquote>
+<p>下一章：把模型、工具、循环真正串起来的 <strong>Agent 主循环（turn 流）</strong>。</p>
+</blockquote>
+</article>
+<nav class="pager"><a class="prev" href="11-工具系统.html"><span class="dir">← 上一篇</span><span class="ptitle">第11章 工具系统（tools / defineTool）</span></a><a class="next" href="13-主循环.html"><span class="dir">下一篇 →</span><span class="ptitle">第13章 Agent 主循环（turn 流）</span></a></nav>
+</main>
+</div>
+<footer>dsh 学习书 · 配套 Markdown 见 <code>chapters/</code> · 双击 HTML 即可离线阅读</footer>
+<script>
+const prog=document.getElementById('progress');
+const onScroll=()=>{const h=document.documentElement;
+  prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';};
+window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+const tocLinks=[...document.querySelectorAll('aside.sidebar .toc a')];
+const heads=[...document.querySelectorAll('main .article h2[id],main .article h3[id]')];
+if(heads.length && tocLinks.length){
+  const obs=new IntersectionObserver((es)=>{es.forEach(e=>{
+    if(e.isIntersecting){const id=e.target.id;
+      tocLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id));}
+  });},{rootMargin:'-45% 0px -50% 0px'});
+  heads.forEach(h=>obs.observe(h));
+}
+</script>
+</body></html>
